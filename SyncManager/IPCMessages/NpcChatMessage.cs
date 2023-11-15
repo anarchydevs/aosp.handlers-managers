@@ -37,7 +37,7 @@ namespace SyncManager.IPCMessages
         public int Amount { get; set; }
 
         [AoMember(10)]
-        public DummyItem TradeItem { get; set; }
+        public int TradeItem { get; set; }
 
     }
 }

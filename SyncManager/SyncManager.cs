@@ -7,6 +7,7 @@ using AOSharp.Core.Movement;
 using AOSharp.Core.UI;
 using SmokeLounge.AOtomation.Messaging.GameData;
 using SmokeLounge.AOtomation.Messaging.Messages;
+using SmokeLounge.AOtomation.Messaging.Messages.ChatMessages;
 using SmokeLounge.AOtomation.Messaging.Messages.N3Messages;
 using SyncManager.IPCMessages;
 using System;
@@ -399,31 +400,33 @@ namespace SyncManager
                     {
                         KnuBotTradeMessage tradeMsg = (KnuBotTradeMessage)n3Msg;
 
-                        // Create a set of current inventory items for comparison
                         var currentInventoryItems = new HashSet<Item>(Inventory.Items);
 
-                        // Find the items that are in the dictionary but not in the current inventory
                         var tradeItems = inventoryItems.Where(pair => !currentInventoryItems.Contains(pair.Key))
-                                                       .Select(pair => pair.Key) // Selecting the Item itself
+                                                       .Select(pair => pair.Key)
                                                        .ToList();
 
-                        // Select the first trade item, if any
                         var tradeItem = tradeItems.FirstOrDefault();
 
-                        // Assuming each Item object has an Id property
-                        //var tradeItemId = tradeItem.Id; // Get the ID of the item
+                        if (tradeItem.Slot == IdentityType.KnuBotTradeWindow)
+                        { }
+                            var knubotwindow = tradeItem.Slot;
 
-                        //Chat.WriteLine($"Sending item ID: {tradeItem.Name}");
+                            var ipcMessage = new NpcChatIPCMessage
+                            {
+                                Target = tradeMsg.Target,
+                                OpenClose = true,
+                                IsTrade = true,
+                                Container = knubotwindow,
+                                TradeItem = tradeItem.Id
+                            };
 
-                        // Broadcast the message with the ID of the trade item
-                        IPCChannel.Broadcast(new NpcChatIPCMessage
-                        {
-                            Target = tradeMsg.Target,
-                            OpenClose = true,
-                            IsTrade = true,
-                            Container = tradeMsg.Container,
-                            TradeItem = tradeItem // Send the item ID here
-                        });
+                            IPCChannel.Broadcast(ipcMessage);
+
+
+                            Chat.WriteLine($"Target : {ipcMessage.Target}, Trade OpenClose: {ipcMessage.OpenClose}, IsTrade: {ipcMessage.IsTrade}," +
+                                $"Container: {ipcMessage.Container}, Trade item: {ipcMessage.TradeItem}");
+                        
                     }
 
 
@@ -431,10 +434,9 @@ namespace SyncManager
                     {
                         KnuBotFinishTradeMessage finishTradeMsg = (KnuBotFinishTradeMessage)n3Msg;
 
-                        // Create a set of current inventory items for comparison
+                        
                         var currentInventoryItems = new HashSet<Item>(Inventory.Items);
 
-                        // Remove items from the dictionary that are no longer in the inventory
                         var itemsToRemove = inventoryItems.Keys.Where(item => !currentInventoryItems.Contains(item)).ToList();
 
                         foreach (var item in itemsToRemove)
@@ -684,16 +686,19 @@ namespace SyncManager
 
             if (chatMsg.IsTrade)
             {
-                //Identity item = chatMsg.TradeItem.Id;
-                //Item tradeItem = FindItem(chatMsg.TradeItem.Id);
+                //Chat.WriteLine($"Target : {chatMsg.Target}, Trade OpenClose: {chatMsg.OpenClose}, IsTrade: {chatMsg.IsTrade}," +
+                //               $"Container: {chatMsg.Container}, Trade item: {chatMsg.TradeItem}");
 
-                //Chat.WriteLine($"Item: {chatMsg.TradeItem}");
+                Item foundItem = Inventory.Items.Find(x => x.Id == chatMsg.TradeItem);
 
-                //Network.Send(new KnuBotTradeMessage()
-                //{
-                //    Container =chatMsg.TradeItem,
-                //});
+                
+                if (foundItem != null)
+                {
+                    Chat.WriteLine($"Item found: {foundItem.Name}");
+                    Trade.AddItem(DynelManager.LocalPlayer.Identity, foundItem.Slot);
+                }
             }
+
 
             if (chatMsg.IsFinishTrade)
             {
