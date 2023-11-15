@@ -400,6 +400,11 @@ namespace SyncManager
                     {
                         KnuBotTradeMessage tradeMsg = (KnuBotTradeMessage)n3Msg;
 
+                        Chat.WriteLine($"Received KnuBotTradeMessage: Unknown1 - {tradeMsg.Unknown1}, Target - {tradeMsg.Target}, " +
+                           $"Unknown2 - {tradeMsg.Unknown2}, Unknown3 - {tradeMsg.Unknown3}, " +
+                           $"Unknown4 - {tradeMsg.Unknown4}, Container - {tradeMsg.Container}");
+
+
                         var currentInventoryItems = new HashSet<Item>(Inventory.Items);
 
                         var tradeItems = inventoryItems.Where(pair => !currentInventoryItems.Contains(pair.Key))
@@ -408,8 +413,8 @@ namespace SyncManager
 
                         var tradeItem = tradeItems.FirstOrDefault();
 
-                        if (tradeItem.Slot == IdentityType.KnuBotTradeWindow)
-                        { }
+                        //if (tradeItem.Slot == IdentityType.KnuBotTradeWindow)
+                        //{ }
                             var knubotwindow = tradeItem.Slot;
 
                             var ipcMessage = new NpcChatIPCMessage
@@ -681,6 +686,14 @@ namespace SyncManager
 
             if (chatMsg.IsStartTrade)
             {
+                Network.Send(new KnuBotCloseChatWindowMessage
+                {
+                    Unknown1 = 2, // is always 2, need to look into closing the window
+                    Unknown2 = 0,
+                    Unknown3 = 0,
+                    Target = chatMsg.Target
+                });
+
                 NpcDialog.OpenTrade(chatMsg.Target, chatMsg.NumberOfItemSlotsInTradeWindow);
             }
 
@@ -691,14 +704,16 @@ namespace SyncManager
 
                 Item foundItem = Inventory.Items.Find(x => x.Id == chatMsg.TradeItem);
 
-                
+                Identity tradeWindow = new Identity(IdentityType.KnuBotTradeWindow, 0000);
+
                 if (foundItem != null)
                 {
-                    Chat.WriteLine($"Item found: {foundItem.Name}");
-                    Trade.AddItem(DynelManager.LocalPlayer.Identity, foundItem.Slot);
+                    Network.Send(new KnuBotTradeMessage
+                    {
+                        Container = tradeWindow
+                    });
                 }
             }
-
 
             if (chatMsg.IsFinishTrade)
             {
