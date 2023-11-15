@@ -193,13 +193,11 @@ namespace SyncManager
             {
                 if (startStopMessage.IsStarting)
                 {
-                    // Update the setting and start the process.
                     _settings["Enable"] = true;
                     Start();
                 }
                 else
                 {
-                    // Update the setting and stop the process.
                     _settings["Enable"] = false;
                     Stop();
                 }
@@ -209,15 +207,11 @@ namespace SyncManager
         private void Start()
         {
             Enable = true;
-
-            //Chat.WriteLine("Syncmanager enabled.");
         }
 
         private void Stop()
         {
             Enable = false;
-
-            //Chat.WriteLine("Syncmanager disabled.");
         }
 
         private void OnZoned(object s, EventArgs e)
@@ -400,11 +394,6 @@ namespace SyncManager
                     {
                         KnuBotTradeMessage tradeMsg = (KnuBotTradeMessage)n3Msg;
 
-                        Chat.WriteLine($"Received KnuBotTradeMessage: Unknown1 - {tradeMsg.Unknown1}, Target - {tradeMsg.Target}, " +
-                           $"Unknown2 - {tradeMsg.Unknown2}, Unknown3 - {tradeMsg.Unknown3}, " +
-                           $"Unknown4 - {tradeMsg.Unknown4}, Container - {tradeMsg.Container}");
-
-
                         var currentInventoryItems = new HashSet<Item>(Inventory.Items);
 
                         var tradeItems = inventoryItems.Where(pair => !currentInventoryItems.Contains(pair.Key))
@@ -412,9 +401,6 @@ namespace SyncManager
                                                        .ToList();
 
                         var tradeItem = tradeItems.FirstOrDefault();
-
-                        //if (tradeItem.Slot == IdentityType.KnuBotTradeWindow)
-                        //{ }
                             var knubotwindow = tradeItem.Slot;
 
                             var ipcMessage = new NpcChatIPCMessage
@@ -422,16 +408,11 @@ namespace SyncManager
                                 Target = tradeMsg.Target,
                                 OpenClose = true,
                                 IsTrade = true,
-                                Container = knubotwindow,
                                 TradeItem = tradeItem.Id
                             };
 
                             IPCChannel.Broadcast(ipcMessage);
 
-
-                            Chat.WriteLine($"Target : {ipcMessage.Target}, Trade OpenClose: {ipcMessage.OpenClose}, IsTrade: {ipcMessage.IsTrade}," +
-                                $"Container: {ipcMessage.Container}, Trade item: {ipcMessage.TradeItem}");
-                        
                     }
 
 
@@ -485,7 +466,6 @@ namespace SyncManager
                     ItemHighId = item.HighId,
                     Target = target,
                 };
-                //Chat.WriteLine($"Sending UseMessage: ItemId={usableMsg.ItemId}, ItemHighId={usableMsg.ItemHighId}, Target={usableMsg.Target}");
                 IPCChannel.Broadcast(usableMsg);
             }
             
@@ -546,7 +526,7 @@ namespace SyncManager
             var localPlayer = DynelManager.LocalPlayer;
 
             if (!localPlayer.IsAttacking && !localPlayer.IsAttackPending
-                && localPlayer.FightingTarget == null //&& targetMsg.Target == null
+                && localPlayer.FightingTarget == null 
                 && Spell.List.Any(spell => spell.IsReady) && !Spell.HasPendingCast)
             {
                 Targeting.SetTarget(targetMsg.Target);
@@ -677,7 +657,7 @@ namespace SyncManager
             {
                 Network.Send(new KnuBotCloseChatWindowMessage
                 {
-                    Unknown1 = 2, // is always 2, need to look into closing the window
+                    Unknown1 = 2, // is always 2
                     Unknown2 = 0,
                     Unknown3 = 0,
                     Target = chatMsg.Target
@@ -688,7 +668,7 @@ namespace SyncManager
             {
                 Network.Send(new KnuBotCloseChatWindowMessage
                 {
-                    Unknown1 = 2, // is always 2, need to look into closing the window
+                    Unknown1 = 2, // is always 2
                     Unknown2 = 0,
                     Unknown3 = 0,
                     Target = chatMsg.Target
@@ -699,15 +679,14 @@ namespace SyncManager
 
             if (chatMsg.IsTrade)
             {
-                //Chat.WriteLine($"Target : {chatMsg.Target}, Trade OpenClose: {chatMsg.OpenClose}, IsTrade: {chatMsg.IsTrade}," +
-                //               $"Container: {chatMsg.Container}, Trade item: {chatMsg.TradeItem}");
-
                 Item foundItem = Inventory.Items.Find(x => x.Id == chatMsg.TradeItem);
 
-                Identity tradeWindow = new Identity(IdentityType.KnuBotTradeWindow, 0000);
+                Identity tradeWindow = new Identity(IdentityType.KnuBotTradeWindow, 0);
 
                 if (foundItem != null)
                 {
+                    Trade.AddItem(tradeWindow, foundItem.Slot);// does not work 
+
                     Network.Send(new KnuBotTradeMessage
                     {
                         Container = tradeWindow
